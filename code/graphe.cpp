@@ -2,11 +2,11 @@
 
 uint8_t architectureMachine = 2;
 
-#include <set>
 #include <chrono>
 #include <ctime>
-#include <vector>
-#include <deque>
+#include <cmath>
+
+#define PI (3.141592653589793)
 
 graphe::graphe(const string cheminVersFichier)
 {
@@ -41,13 +41,13 @@ void graphe::lire_noeud(uint32_t noeud)
 		// Si le noeud n'a jamais été lu, alors il va l'être !
 		if(lesNoeuds[noeud].partieVariable == 0) {
 
-			// Lecture des données statiques du noeud
+			// Lecture des donn.es statiques du noeud
 			DATA.seekg(DEBUT + (28 * noeud), ios::beg);
 			this->lire(lesNoeuds[noeud].partieVariable);
 			this->lire(lesNoeuds[noeud].latitude);
 			this->lire(lesNoeuds[noeud].longitude);
 			for(int i = 0; i < 4; ++i) {
-				this->lire(lesNoeuds[noeud].futur[i]);
+				this->lire(lesNoeuds[noeud].zone[i]);
 			}
 
 			// Lecture des données variable du noeud
@@ -121,116 +121,131 @@ void graphe::afficher_noeud(const uint32_t noeud)
 	cout << " Noeud #" << noeud << endl;
 	cout << " - Latitude: " << leNoeud.latitude << endl;
 	cout << " - Longitude: " << leNoeud.longitude << endl;
-	cout << " - Nom: " << leNoeud.nom << " - " << hex << leNoeud.nom << " - " << leNoeud.nom.length() << endl;
+	cout << " - Nom: " << leNoeud.nom << endl;
 	for(int i = 0; i < 4; ++i) {
-		cout << " -> Futur[" << i << "]: " << leNoeud.futur[i] << endl;
+		this->lire_noeud(leNoeud.zone[i]);
+		cout << " -> Zone[" << i << "]: " << leNoeud.zone[i] << " - nom = " << lesNoeuds[leNoeud.zone[i]].nom << endl;
 	}
-	cout << " - Nombre d'arcs: " << leNoeud.nbArcs << endl;
+	/*cout << " - Nombre d'arcs: " << leNoeud.nbArcs << endl;
 	for(map<uint32_t, float>::iterator it = leNoeud.liens.begin(); it != leNoeud.liens.end(); ++it) {
 		cout << " -> Arc vers le noeud " << it->first << " avec un poids de " << it->second << endl;
-	}
+	}*/
 	cout << "+--------------------------------------------------------------------+" << endl;
 }
 
-void graphe::trouver_chemin_optimal(const uint32_t premierNoeud, const uint32_t secondNoeud)
+uint32_t graphe::localiser(float latitude, float longitude)
 {
-	map<uint32_t, uint32_t> predecesseurs;			// Noeud, prédécesseur du noeud
-	map<uint32_t, float> total;								  // Noeud, poids
-	multimap<float, uint32_t> totalInverse;		  // Poids, Noeuds
-	set<uint32_t> noeudsObserve;								// Les noeuds déjà observés
-  uint32_t noeudCourant = premierNoeud;
-	float poidsTotal = 0.f;											// Calculer le poids total
+	this->afficher_noeud(372);
 
-	// On va ajouter 0 dans le total et le total inversé afin d'éviter de faire du
-	// code custom juste pour la première boucle.
-	total[premierNoeud] = 0;
-	totalInverse.insert(pair<float, uint32_t>(0, premierNoeud));
+	uint32_t depart = 0;
+	return this->trouver_noeud_le_plus_proche(depart, latitude, longitude);
+}
 
-	// Chrono
-	chrono::time_point<chrono::system_clock> debut, fin;
-	debut = chrono::system_clock::now();
+uint32_t graphe::trouver_noeud_le_plus_proche(uint32_t& numero_noeud, float& latitude, float& longitude)
+{
+	float distance = this->distance(numero_noeud, latitude, longitude);
+	noeud* noeud = &lesNoeuds[numero_noeud];
 
-	// Boucle afin de déterminer le chemin le plus optimal pour se rendre entre
-	// le premier noeud et le deuxième.
-	while(noeudCourant != secondNoeud) {
+	cout << "Debut -> NoeudCourant: " << noeud->nom << endl;
+	this->afficher_noeud(numero_noeud);
 
-		// Aller chercher le noeud avec le poids le plus petit en partant
-		while(noeudsObserve.find(noeudCourant) != noeudsObserve.end() && totalInverse.size() > 0) {
-			noeudCourant = totalInverse.begin()->second;
-			totalInverse.erase(totalInverse.begin());
+	uint32_t noeudPlusProche = 0;
+	int zoneDuNoeudAExplorer = 0;
+
+	// Trouver la zone a explorer
+	if(latitude > noeud->latitude) {
+		if(longitude > noeud->longitude) { // Zone 0
+			zoneDuNoeudAExplorer = 0;
+		} else if(longitude < noeud->longitude) { // Zone 1
+			zoneDuNoeudAExplorer = 1;
 		}
-		this->lire_noeud(noeudCourant);
+	} else {
+		if(longitude > noeud->longitude) { // Zone 2
+			zoneDuNoeudAExplorer = 2;
+		} else if(longitude < noeud->longitude) { // Zone 3
+			zoneDuNoeudAExplorer = 3;
+		}
+	}
 
-		// Si TotalInverse est vide et qu'on n'est plus sur le premier noeud,
-		// alors on a fait le tour du graphe et on peut maintenant savoir le
-		// chemin le plus efficace à l'aide du map des prédécesseurs.
-		if(totalInverse.size() == 0 && noeudCourant != premierNoeud) break;
+	// Calculer la distance
+	float distance_zone = this->distance(noeud->zone[zoneDuNoeudAExplorer], latitude, longitude);
+	if(distance < distance_zone) {
+		cout << "Debut -> NoeudCourant: " << noeud->nom << endl;
+		return numero_noeud;
+	}
+	noeudPlusProche = this->trouver_noeud_le_plus_proche(noeud->zone[zoneDuNoeudAExplorer], latitude, longitude);
 
-		// Puisqu'on a trouvé un noeud qu'on a pas encore parcouru, on l'ajoute a
-		// la liste des noeuds parcourus et on le retire de TotalInverse.
-		noeudsObserve.insert(noeudCourant);
-		//totalInverse.erase(totalInverse.begin());
+	// Regarder si nous devrions regarder dans une autre zone
+	this->lire_noeud(noeud->zone[zoneDuNoeudAExplorer]);
+	auto* noeudAExplorer = &lesNoeuds[noeud->zone[zoneDuNoeudAExplorer]];
+	set<int> autresZones = this->trouver_zones_a_explorer(noeud, noeudAExplorer, zoneDuNoeudAExplorer, latitude, longitude);
 
-		// Si on est rendu au noeud qu'on voulait trouver, on a trouvé le chemin
-		// le plus optimal !
-		if(noeudCourant != secondNoeud) {
-			for(map<uint32_t, float>::iterator it = lesNoeuds[noeudCourant].liens.begin(); it != lesNoeuds[noeudCourant].liens.end(); ++it) {
-
-				// On conserve seulement le chemin avec le plus petit poids
-				float poidsTotal = it->second + total[noeudCourant];
-				if(total[it->first] == 0 || total[it->first] > poidsTotal) {
-					total[it->first] = poidsTotal;
-					totalInverse.insert(pair<float, uint32_t>(poidsTotal, it->first));
-					predecesseurs[it->first] = noeudCourant;
-				}
+	if(autresZones.size() > 0) {
+		cout << "Explorer d'autres zones : ";
+		for(set<int>::iterator it = autresZones.begin(); it != autresZones.end(); ++it) {
+			cout << "Zone additionnelle : " <<  lesNoeuds[noeud->zone[*it]].nom  << " # " << noeud->zone[*it] << " ## " << *it << endl;
+			float noeudZonePlusProche = this->trouver_noeud_le_plus_proche(noeud->zone[*it], latitude, longitude);
+			float distanceNoeudZoneEtPoint = this->distance(noeud->zone[*it], latitude, longitude);
+			if(distanceNoeudZoneEtPoint < distance_zone) {
+				distance_zone = distanceNoeudZoneEtPoint;
+				noeudPlusProche = noeud->zone[*it];
 			}
 		}
 	}
 
-	// On veut savoir le temps qu'a pris la méthode pour trouver le chemin le
-	// plus optimal.
-	fin = chrono::system_clock::now();
-	chrono::duration<double> tempsEcoule = fin - debut;
+	cout << "Fin -> NoeudCourant: " << noeud->nom << endl;
 
-	// Afficher le chemin qu'on vient de trouver.
-	afficher_chemin(predecesseurs, premierNoeud, secondNoeud);
 
-	// Afficher le temps
-	cout << " - Temps pour trouver le meilleur chemin : " << fixed << tempsEcoule.count() << "s." << endl << endl;
-	cout.unsetf(ios_base::fixed);
+	return noeudPlusProche;
 }
 
-void graphe::afficher_chemin(map<uint32_t, uint32_t>& predecesseurs, const uint32_t& premierNoeud, const uint32_t& secondNoeud)
+set<int> graphe::trouver_zones_a_explorer(noeud* noeudCourant, noeud* noeudAExplorer, int zoneDuNoeudAExplorer, float& latitude, float& longitude)
 {
-	// Calculer le poids total
-	float poidsTotal = 0.f;
-	deque<uint32_t> cheminNormal;
+	set<int> zones;
 
-	// On va remettre le chemin en ordre du début jusqu'à la fin.
-	uint32_t noeudCourant = secondNoeud;
-	while(noeudCourant != premierNoeud) {
-		cheminNormal.push_front(noeudCourant);
-		noeudCourant = predecesseurs[noeudCourant];
-	}
-	cheminNormal.push_front(premierNoeud);
+	float distanceEntreNoeudCourantEtNoeudAExplorer = this->distance(noeudCourant, noeudAExplorer);
+	float distanceEntreLatutideNoeudCourantEtLatitudeDuPoint = abs(noeudCourant->latitude - latitude);
+	float distanceEntreLongitudeNoeudCourantEtLongitudeDuPoint = abs(noeudCourant->longitude - longitude);
 
-	// Afficher le chemin
-	noeud* ptrNoeudPrecedent = nullptr;
-	noeud* ptrNoeudCourant = nullptr;
-
-	for(size_t i = 0; i < cheminNormal.size(); ++i) {
-		ptrNoeudCourant = &lesNoeuds[cheminNormal[i]];
-
-		if(i > 0) {
-			// Retrouver le poids du lien entre les deux noeuds
-			poidsTotal += ptrNoeudPrecedent->liens[cheminNormal[i]];
-			cout << " " << ptrNoeudPrecedent->nom << " <=> " << ptrNoeudCourant->nom;
-			cout << " | Poids du lien : " << ptrNoeudPrecedent->liens[cheminNormal[i]] << endl;
+	if(distanceEntreLatutideNoeudCourantEtLatitudeDuPoint < distanceEntreNoeudCourantEtNoeudAExplorer) {
+		if(zoneDuNoeudAExplorer > 1) {
+			zones.insert(zoneDuNoeudAExplorer - 2);
+		} else {
+			zones.insert(zoneDuNoeudAExplorer + 2);
 		}
-
-		// Le noeud courant devient le noeud précédent dans la prochaine exécution
-		ptrNoeudPrecedent = ptrNoeudCourant;
 	}
-	cout << "--------------------------------------------------------------------------" << endl;
-	cout << " - Poids total du chemin le plus court : " << poidsTotal << endl;
+	if(distanceEntreLongitudeNoeudCourantEtLongitudeDuPoint < distanceEntreNoeudCourantEtNoeudAExplorer) {
+		if(zoneDuNoeudAExplorer % 2 == 0) {
+			zones.insert(zoneDuNoeudAExplorer + 1);
+		} else {
+			zones.insert(zoneDuNoeudAExplorer - 1);
+		}
+	}
+
+	return zones;
+}
+
+string graphe::operator[](uint32_t numero_noeud)
+{
+	this->lire_noeud(numero_noeud);
+	return lesNoeuds[numero_noeud].nom;
+}
+
+float graphe::distance(uint32_t& numero_noeud, float& latitude, float& longitude)
+{
+	this->lire_noeud(numero_noeud);
+	noeud* noeud = &lesNoeuds[numero_noeud];
+
+	float x2 = pow((longitude - noeud->longitude), 2);
+	float y2 = pow((latitude - noeud->latitude), 2);
+	float c2 = pow(cos((noeud->latitude + latitude) / 2 * PI / 180), 2);
+	return sqrt(y2 + x2 * c2) * 111;
+}
+
+float graphe::distance(noeud* noeudCourant, noeud* noeudDistant)
+{
+	float x2 = pow((noeudDistant->longitude - noeudCourant->longitude), 2);
+	float y2 = pow((noeudDistant->latitude - noeudCourant->latitude), 2);
+	float c2 = pow(cos((noeudCourant->latitude + noeudDistant->latitude) / 2 * PI / 180), 2);
+	return sqrt(y2 + x2 * c2);
 }

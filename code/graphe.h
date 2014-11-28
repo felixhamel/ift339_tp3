@@ -5,6 +5,7 @@
 #include <fstream>
 #include <map>
 #include <stdint.h> // Compatibilité avec uint32_t
+#include <set>
 
 using namespace std;
 
@@ -23,7 +24,7 @@ class graphe
       uint32_t partieVariable;
       float latitude;
       float longitude;
-      uint32_t futur[4];            // Autres trucs pour un usage futur
+      uint32_t zone[4];            // Autres trucs pour un usage futur
 
       // Partie variable
       uint16_t nbArcs;              // Nombre d'arcs
@@ -72,14 +73,6 @@ class graphe
      */
     graphe& operator=(const graphe &graphe)=delete;
 
-    /**
-     * Afficher le chemin trouvé.
-     * @param predecesseurs Predecesseurs de chaque noeud (le plus optimal)
-     * @param premierNoeud  Le premier noeud
-     * @param secondNoeud   Le dernier noeud du chemin
-     */
-    void afficher_chemin(map<uint32_t, uint32_t>& predecesseurs, const uint32_t& premierNoeud, const uint32_t& secondNoeud);
-
   public:
 
     /**
@@ -107,9 +100,44 @@ class graphe
     void afficher_noeud(const uint32_t noeud);
 
     /**
-     * Trouve et affiche le chemin le plus optimal entre les 2 noeuds.
-     * @param premierNoeud Numéro du premier noeud.
-     * @param secondNoeud  Numéro du second noeud.
+     * Trouver un numero de noeud
+     *
+     * @param  LAT Latitude
+     * @param  LON Longitude
+     * @return     [description]
      */
-    void trouver_chemin_optimal(const uint32_t premierNoeud, const uint32_t secondNoeud);
+    uint32_t localiser(float latitude,float longitude);
+
+    /**
+     * Trouver quelle zone est la meilleure pour la recherche.
+     *
+     * @param  numero_noeud [description]
+     * @param  latitude     [description]
+     * @param  longitude    [description]
+     * @return              [description]
+     */
+    uint32_t trouver_noeud_le_plus_proche(uint32_t& numero_noeud, float& latitude, float& longitude);
+
+    set<int> trouver_zones_a_explorer(noeud* noeudCourant, noeud* noeudAExplorer, int zoneDuNoeudAExplorer, float& latitude, float& longitude);
+
+
+    /**
+     * Une chaine qui identifie un noeud
+     *
+     * @param  uint32_t [description]
+     * @return          [description]
+     */
+    string operator[](uint32_t);
+
+    /**
+     * Distance avec le point i
+     *
+     * @param  uint32_t [description]
+     * @param  float    [description]
+     * @param  float    [description]
+     * @return          [description]
+     */
+    float distance(uint32_t&, float&, float&);
+
+    float distance(noeud*, noeud*);
 };
