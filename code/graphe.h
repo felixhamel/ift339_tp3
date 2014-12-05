@@ -1,11 +1,22 @@
+/**
+ * IFT339 - TP3
+ * Recherche d’information bi-demensionnelle
+ *
+ * Membres de l'équipe :
+ *  - Félix Hamel
+ *  - Nabil Diab
+ *
+ * Universite de Sherbrooke, automne 2014
+ */
+
 #pragma once
 
 #include <string>
 #include <iostream>
 #include <fstream>
 #include <map>
-#include <stdint.h> // Compatibilité avec uint32_t
-#include <set>
+
+#include <stdint.h> // Compatibilite avec uint32_t
 
 using namespace std;
 
@@ -34,34 +45,34 @@ class graphe
 
     map<uint32_t, noeud> lesNoeuds;   // Les noeuds deja lus
     uint32_t nbNOEUDS;                // Le nombre de noeuds
-    ifstream DATA;                    // Le flot d'entrée
+    ifstream DATA;                    // Le flot d'entree
     uint32_t DEBUT;                   // Debut de la partie fixe
     string nom;                       // Nom du graphe
     uint8_t architecture;             // Architecture du fichier (Little or Big endian)
 
     /**
-     * Lire le noeud avec le numéro donné en paramètre.
-     * @param noeud Numéro du noeud a lire dans le fichier et a charger en mémoire.
+     * Lire le noeud avec le numero donne en paramatre.
+     * @param noeud Numero du noeud a lire dans le fichier et a charger en memoire.
      */
-    void lire_noeud(uint32_t noeud);
+    void lire_noeud(uint32_t);
 
     /**
-     * Lire un uint32_t à la position courante de DATA. (4 octets)
+     * Lire un uint32_t a la position courante de DATA. (4 octets)
      * @param noeud variable a extraire du fichier.
      */
-    void lire(uint32_t& noeud);
+    void lire(uint32_t&);
 
     /**
-     * Lire un uint16_t à la position courante de DATA. (2 octets)
-     * @param noeud variable à extraire du fichier.
+     * Lire un uint16_t a la position courante de DATA. (2 octets)
+     * @param noeud variable a extraire du fichier.
      */
-    void lire(uint16_t& noeud);
+    void lire(uint16_t&);
 
     /**
-     * Lire un float à la position courante de DATA. (4 octets)
-     * @param a variable à extraire du fichier.
+     * Lire un float a la position courante de DATA. (4 octets)
+     * @param a variable a extraire du fichier.
      */
-    void lire(float& a);
+    void lire(float&);
 
     /**
      * Constructeur par copie.
@@ -69,7 +80,7 @@ class graphe
     graphe(const graphe &graphe)=delete;
 
     /**
-     * Désactiver l'opérateur =. Il vaut mieux utiliser le constructeur par copie.
+     * Desactiver l'operateur =. Il vaut mieux utiliser le constructeur par copie.
      */
     graphe& operator=(const graphe &graphe)=delete;
 
@@ -79,7 +90,7 @@ class graphe
      * Constructeur.
      * @param: cheminVersFichier Chemin vers le fichier contenant le graphe a lire.
      */
-    graphe(const string cheminVersFichier);
+    graphe(const string&);
 
     /**
      * Destructeur. Va fermer le fichier contenant le graphe.
@@ -93,51 +104,47 @@ class graphe
     const uint32_t size() const;
 
     /**
-     * Afficher le noeud avec le numéro donné en paramètre.
-     * S'il n'est pas en mémoire, ce dernier va être lu.
-     * @param noeud numéro du noeud a afficher.
+     * Afficher le noeud avec le numero donne en paramatre.
+     * S'il n'est pas en memoire, ce dernier va etre lu.
+     * @param noeud numero du noeud a afficher.
      */
-    void afficher_noeud(const uint32_t noeud);
+    void afficher_noeud(const uint32_t);
 
     /**
      * Trouver un numero de noeud
      *
-     * @param  LAT Latitude
-     * @param  LON Longitude
-     * @return     [description]
+     * @param  LAT      Latitude du point.
+     * @param  LON      Longitude du point.
+     * @return uint32_t Numero du noeud le plus proche du point.
      */
-    uint32_t localiser(float latitude,float longitude);
+    uint32_t localiser(float&, float&);
+
 
     /**
-     * Trouver quelle zone est la meilleure pour la recherche.
+     * Trouver si le noeud courant est le noeud le plus proche ou si c'est un des noeud lie a ce point.
      *
-     * @param  numero_noeud [description]
-     * @param  latitude     [description]
-     * @param  longitude    [description]
-     * @return              [description]
+     * @param numero_noeud          Noeud a verifier
+     * @param distance_point_noeud  Distance la plus courte entre le point et le noeud le plus proche trouve jusqu'a maintenant.
+     * @param latitude              Latitude du point.
+     * @param longitude             Longitude du point.
      */
-    uint32_t trouver_noeud_le_plus_proche(uint32_t& numero_noeud, float& latitude, float& longitude);
-
-    set<int> trouver_zones_a_explorer(noeud* noeudCourant, noeud* noeudAExplorer, int zoneDuNoeudAExplorer, float& latitude, float& longitude);
-
+    void trouver_noeud_le_plus_proche(uint32_t&, pair<float, uint32_t>&, float&, float&);
 
     /**
      * Une chaine qui identifie un noeud
      *
-     * @param  uint32_t [description]
-     * @return          [description]
+     * @param  uint32_t Numero du noeud.
+     * @return string   Nom du noeud
      */
-    string operator[](uint32_t);
+    string operator[](uint32_t&);
 
     /**
-     * Distance avec le point i
+     * Distance avec le point et le noeud.
      *
-     * @param  uint32_t [description]
-     * @param  float    [description]
-     * @param  float    [description]
-     * @return          [description]
+     * @param  uint32_t Numero du noeud a calculer la distance ave le point
+     * @param  float    Latitude du point.
+     * @param  float    Longitude du point.
+     * @return float    Distance entre le noeud et le point.
      */
     float distance(uint32_t&, float&, float&);
-
-    float distance(noeud*, noeud*);
 };
