@@ -2,8 +2,8 @@
  * IFT339 - TP3
  * Recherche d’information bi-demensionnelle
  *
- * Membres de l'équipe :
- *  - Félix Hamel
+ * Membres de l'equipe :
+ *  - Felix Hamel
  *  - Nabil Diab
  *
  * Universite de Sherbrooke, automne 2014
@@ -41,7 +41,7 @@ graphe::graphe(const string& cheminVersFichier)
 
 graphe::~graphe()
 {
-	// Fermer le fichier à la sortie du programme.
+	// Fermer le fichier a la sortie du programme.
 	if (DATA.is_open()) {
 		DATA.close();
 	}
@@ -50,7 +50,7 @@ graphe::~graphe()
 void graphe::lire_noeud(uint32_t noeud)
 {
 	if(noeud < nbNOEUDS) {
-		// Si le noeud n'a jamais ete lu, alors il va l'être !
+		// Si le noeud n'a jamais ete lu, alors il va l'etre !
 		if(lesNoeuds[noeud].partieVariable == 0) {
 
 			// Lecture des donn.es statiques du noeud
@@ -88,7 +88,7 @@ void graphe::lire(uint16_t& noeud)
 {
 	DATA.read(reinterpret_cast<char*>(&noeud), 2);
 
-	// Si l'architecture diffère du fichier, on swap les bits.
+	// Si l'architecture differe du fichier, on swap les bits.
 	if(architecture != architectureMachine) {
 		// http://stackoverflow.com/a/2182184
 		noeud = (noeud >> 8) | (noeud << 8);
@@ -99,7 +99,7 @@ void graphe::lire(uint32_t& noeud)
 {
 	DATA.read(reinterpret_cast<char*>(&noeud), 4);
 
-	// Si l'architecture diffère du fichier, on swap les bits.
+	// Si l'architecture differe du fichier, on swap les bits.
 	if(architecture != architectureMachine) {
 		// http://stackoverflow.com/a/13001420
 		noeud = (noeud >> 24) | ((noeud << 8) & 0x00FF0000) | ((noeud >> 8) & 0x0000FF00) | (noeud << 24);
@@ -110,7 +110,7 @@ void graphe::lire(float& a)
 {
 	DATA.read(reinterpret_cast<char*>(&a), 4);
 
-	// Si l'architecture diffère du fichier, on swap les bits.
+	// Si l'architecture differe du fichier, on swap les bits.
 	if(architecture != architectureMachine) {
 		char *floatToConvert = ( char* ) & a;
 		// http://stackoverflow.com/a/2782742
@@ -167,7 +167,7 @@ void graphe::trouver_noeud_le_plus_proche(uint32_t& numero_noeud, pair<float, ui
 	// Calculer la distance entre le noeud et le point
 	float distance = this->distance(numero_noeud, latitude, longitude);
 
-	// On conserve uniquement l'information qui peut nous être utile
+	// On conserve uniquement l'information qui peut nous etre utile
 	if(distance <= distance_point_noeud.first) {
 		distance_point_noeud = make_pair(distance, numero_noeud);
 	}
@@ -192,7 +192,7 @@ void graphe::trouver_noeud_le_plus_proche(uint32_t& numero_noeud, pair<float, ui
 	set<int> zones_a_explorer;
 	zones_a_explorer.insert(zone_du_noeud_a_explorer);
 
-	// Il ne sert a rien d'aller voir une zone où nous nous éloignons du point a trouver
+	// Il ne sert a rien d'aller voir une zone où nous nous eloignons du point a trouver
 	if((latitude - noeud->latitude) < distance_point_noeud.first) {
 		zones_a_explorer.insert((zone_du_noeud_a_explorer > 1 ? (zone_du_noeud_a_explorer - 2) : (zone_du_noeud_a_explorer + 2)));
 	}
