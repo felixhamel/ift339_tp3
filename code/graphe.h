@@ -77,12 +77,12 @@ class graphe
     /**
      * Constructeur par copie.
      */
-    graphe(const graphe &graphe)=delete;
+    graphe(const graphe&)=delete;
 
     /**
      * Desactiver l'operateur =. Il vaut mieux utiliser le constructeur par copie.
      */
-    graphe& operator=(const graphe &graphe)=delete;
+    graphe& operator=(const graphe&)=delete;
 
   public:
 

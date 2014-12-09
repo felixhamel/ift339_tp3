@@ -13,11 +13,6 @@
 
 using namespace std;
 
-/**
- * Fonction mère du programme. Va lire un fichier chemin.txt et
- * trouver le chemin pour chaque couple de noeud contenu dans ce dernier.
- * @return code0 de sortie du programme.
- */
 int main()
 {
   float LAT,LON;
@@ -32,7 +27,7 @@ int main()
   // Création du graphe
   graphe G(nomFichier);
 
-  // Lecture des chemins
+  // Lecture des points
   while(points >> LAT >> LON) {
     cout << "LAT:" << LAT << " LON:" << LON << endl;
     i=G.localiser(LAT,LON);

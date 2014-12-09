@@ -13,12 +13,9 @@
 
 uint8_t architectureMachine = 2;
 
-#include <chrono>
-#include <ctime>
 #include <cmath>
-#include <thread>
 #include <set>
-#include <vector>
+#include <limits>
 
 graphe::graphe(const string& cheminVersFichier)
 {
@@ -147,77 +144,77 @@ void graphe::afficher_noeud(const uint32_t noeud)
 
 uint32_t graphe::localiser(float& latitude, float& longitude)
 {
-	// Distance entre chaque noeud et le point donne par la latitude et la longitude.
-	pair<float, uint32_t> distance_point_noeud = make_pair(std::numeric_limits<float>::infinity(), -1);
+	// Garder le noeud le plus proche du point
+	pair<float, uint32_t> distancePointNoeud = pair<float, uint32_t>(std::numeric_limits<float>::max(), -1);
 
 	// Essayer de trouver le noeud le plus proche en debutant par le noeud 0
 	uint32_t debut = 0;
-	this->trouver_noeud_le_plus_proche(debut, distance_point_noeud, latitude, longitude);
+	this->trouver_noeud_le_plus_proche(debut, distancePointNoeud, latitude, longitude);
 
 	// Retourner le noeud le plus proche
-	return distance_point_noeud.second;
+	return distancePointNoeud.second;
 }
 
-void graphe::trouver_noeud_le_plus_proche(uint32_t& numero_noeud, pair<float, uint32_t>& distance_point_noeud, float& latitude, float& longitude)
+void graphe::trouver_noeud_le_plus_proche(uint32_t& numeroNoeud, pair<float, uint32_t>& distancePointNoeud, float& latitude, float& longitude)
 {
 	// Aller chercher les informations du noeud dans le graphe
-	this->lire_noeud(numero_noeud);
-	noeud* noeud = &lesNoeuds[numero_noeud];
+	this->lire_noeud(numeroNoeud);
+	noeud* noeud = &lesNoeuds[numeroNoeud];
 
 	// Calculer la distance entre le noeud et le point
-	float distance = this->distance(numero_noeud, latitude, longitude);
+	float distance = this->distance(numeroNoeud, latitude, longitude);
 
 	// On conserve uniquement l'information qui peut nous etre utile
-	if(distance <= distance_point_noeud.first) {
-		distance_point_noeud = make_pair(distance, numero_noeud);
+	if(distance <= distancePointNoeud.first) {
+		distancePointNoeud = pair<float, uint32_t>(distance, numeroNoeud);
 	}
 
 	// Trouver la zone a explorer
-	int zone_du_noeud_a_explorer;
+	int zoneNoeudAExplorer;
 	if(latitude > noeud->latitude) {
 		if(longitude > noeud->longitude) { // Zone 0
-			zone_du_noeud_a_explorer = 0;
+			zoneNoeudAExplorer = 0;
 		} else if(longitude < noeud->longitude) { // Zone 1
-			zone_du_noeud_a_explorer = 1;
+			zoneNoeudAExplorer = 1;
 		}
 	} else {
 		if(longitude > noeud->longitude) { // Zone 2
-			zone_du_noeud_a_explorer = 2;
+			zoneNoeudAExplorer = 2;
 		} else if(longitude < noeud->longitude) { // Zone 3
-			zone_du_noeud_a_explorer = 3;
+			zoneNoeudAExplorer = 3;
 		}
 	}
 
 	// Trouver quelles zones explorer
-	set<int> zones_a_explorer;
-	zones_a_explorer.insert(zone_du_noeud_a_explorer);
+	set<int> zonesAExplorer;
+	zonesAExplorer.insert(zoneNoeudAExplorer);
 
 	// Il ne sert a rien d'aller voir une zone où nous nous eloignons du point a trouver
-	if((latitude - noeud->latitude) < distance_point_noeud.first) {
-		zones_a_explorer.insert((zone_du_noeud_a_explorer > 1 ? (zone_du_noeud_a_explorer - 2) : (zone_du_noeud_a_explorer + 2)));
+	if((latitude - noeud->latitude) < distancePointNoeud.first) {
+		zonesAExplorer.insert((zoneNoeudAExplorer > 1 ? (zoneNoeudAExplorer - 2) : (zoneNoeudAExplorer + 2)));
 	}
-	if((longitude - noeud->longitude) < distance_point_noeud.first) {
-		zones_a_explorer.insert((zone_du_noeud_a_explorer % 2 == 0 ? (zone_du_noeud_a_explorer + 1) : (zone_du_noeud_a_explorer - 1)));
+	if((longitude - noeud->longitude) < distancePointNoeud.first) {
+		zonesAExplorer.insert((zoneNoeudAExplorer % 2 == 0 ? (zoneNoeudAExplorer + 1) : (zoneNoeudAExplorer - 1)));
 	}
 
 	// Lancer l'exploration dans ces zones
-	for(set<int>::iterator it = zones_a_explorer.begin(); it != zones_a_explorer.end(); ++it) {
+	for(set<int>::iterator it = zonesAExplorer.begin(); it != zonesAExplorer.end(); ++it) {
 		if(noeud->zone[*it] > 0) {
-			this->trouver_noeud_le_plus_proche(noeud->zone[*it], distance_point_noeud, latitude, longitude);
+			this->trouver_noeud_le_plus_proche(noeud->zone[*it], distancePointNoeud, latitude, longitude);
 		}
 	}
 }
 
-string graphe::operator[](uint32_t& numero_noeud)
+string graphe::operator[](uint32_t& numeroNoeud)
 {
-	this->lire_noeud(numero_noeud);
-	return lesNoeuds[numero_noeud].nom;
+	this->lire_noeud(numeroNoeud);
+	return lesNoeuds[numeroNoeud].nom;
 }
 
-float graphe::distance(uint32_t& numero_noeud, float& latitude, float& longitude)
+float graphe::distance(uint32_t& numeroNoeud, float& latitude, float& longitude)
 {
-	this->lire_noeud(numero_noeud);
-	noeud& noeud = lesNoeuds[numero_noeud];
+	this->lire_noeud(numeroNoeud);
+	noeud& noeud = lesNoeuds[numeroNoeud];
 
 	float x2 = pow((longitude - noeud.longitude), 2);
 	float y2 = pow((latitude - noeud.latitude), 2);

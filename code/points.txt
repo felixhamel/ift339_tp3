@@ -1,2 +1,2 @@
-grUSA_32.sbin
+grUSA_1024.sbin
 42.817 -70.517
